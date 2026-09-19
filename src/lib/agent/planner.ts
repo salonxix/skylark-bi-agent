@@ -14,6 +14,49 @@ export function isAmbiguousRevenueQuery(message: string): boolean {
 }
 
 /**
+ * Checks if a user prompt is a greeting or general conversational help query
+ */
+export function isGreetingOrHelp(message: string): boolean {
+  const normalized = message.toLowerCase().trim();
+  return /^(hey|hi|hello|help|howdy|greetings|what can you do|who are you|good morning|good evening)\b/i.test(normalized);
+}
+
+/**
+ * Builds standard greeting response with suggested query paths
+ */
+export function buildGreetingResponse(): PlannerResult {
+  return {
+    type: 'clarification',
+    clarification: {
+      question: 'Welcome to Skylark BI Agent! What business metrics would you like to explore?',
+      reason: 'I can analyze live Monday.com Deals (Sales Pipeline) and Work Orders (Fulfillment, Billing & Collections).',
+      options: [
+        {
+          label: 'Open Pipeline by Sector',
+          description: 'View total deal pipeline value broken down by industry sector.',
+          queryHint: 'Show me our open deal pipeline by sector',
+        },
+        {
+          label: 'Energy Sector Pipeline',
+          description: 'Analyze open deals in the Energy sector.',
+          queryHint: "How's our pipeline looking for the energy sector this quarter?",
+        },
+        {
+          label: 'Billed vs Collected Cash',
+          description: 'Compare total billed invoices against cash received.',
+          queryHint: 'How much has been billed versus collected?',
+        },
+        {
+          label: 'Work Order Fulfillment Risks',
+          description: 'Inspect work orders with unbilled amounts or collection risk.',
+          queryHint: 'Which work orders have billing or collection risk?',
+        },
+      ],
+    },
+  };
+}
+
+/**
  * Builds standard clarification response for ambiguous revenue questions
  */
 export function buildRevenueClarification(): PlannerResult {
@@ -60,18 +103,23 @@ export async function planQuery(
     throw new Error('Message cannot be empty.');
   }
 
-  // 1. Deterministic guard for ambiguous revenue query
+  // 1. Deterministic guard for greetings / general help
+  if (isGreetingOrHelp(trimmed)) {
+    return buildGreetingResponse();
+  }
+
+  // 2. Deterministic guard for ambiguous revenue query
   if (isAmbiguousRevenueQuery(trimmed)) {
     return buildRevenueClarification();
   }
 
-  // 2. Call AI Planner to extract structured intent
+  // 3. Call AI Planner to extract structured intent
   const prompt = `Convert the following user question into a strict JSON QuerySpec or Clarification:\n\n"${trimmed}"`;
 
   try {
     const rawOutput = await aiProvider.generateJson<unknown>(prompt, PLANNER_SYSTEM_PROMPT);
 
-    // 3. Strict schema validation via Zod
+    // 4. Strict schema validation via Zod
     const validated = PlannerOutputSchema.safeParse(rawOutput);
 
     if (!validated.success) {

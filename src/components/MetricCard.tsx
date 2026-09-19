@@ -30,63 +30,101 @@ export const MetricCard: React.FC<MetricCardProps> = ({ result }) => {
     .replace(/\b\w/g, (l) => l.toUpperCase());
 
   const formattedValue = formatMetricValue(result.value, result.unit);
-  const exactFullValue = result.unit === 'INR' ? `₹${result.value.toLocaleString('en-IN')}` : null;
+  const exactFullValue = result.unit === 'INR' && Math.abs(result.value) >= 100000 ? `₹${result.value.toLocaleString('en-IN')}` : null;
+
+  const boardLabel = result.sourceBoard === 'deals'
+    ? 'Deals Board'
+    : result.sourceBoard === 'work_orders'
+    ? 'Work Orders'
+    : 'Cross-Board';
+
+  const recordContext = result.recordsConsidered !== undefined
+    ? `${result.recordsConsidered} records considered`
+    : 'Live dataset';
 
   return (
     <div
+      className="theme-surface animate-card-fade"
       style={{
-        backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '12px',
         padding: '1.25rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.5rem',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        justifyContent: 'space-between',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
+        minHeight: '140px',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span
-          style={{
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: 'var(--text-muted)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-        >
-          {formattedTitle}
-        </span>
-        <span
-          style={{
-            fontSize: '0.75rem',
-            padding: '0.2rem 0.5rem',
-            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-            color: 'var(--brand-blue)',
-            borderRadius: '4px',
-            fontWeight: 500,
-          }}
-        >
-          {result.period}
-        </span>
-      </div>
+      {/* Top subtle accent bar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '2px',
+          background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))',
+          opacity: 0.85,
+        }}
+      />
 
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-        <span
-          style={{
-            fontSize: '1.875rem',
-            fontWeight: 700,
-            color: 'var(--text-main)',
-            fontFamily: 'var(--font-mono)',
-          }}
-        >
-          {formattedValue}
-        </span>
-        {exactFullValue && exactFullValue !== formattedValue && (
-          <span style={{ fontSize: '0.8125rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-            ({exactFullValue})
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            {formattedTitle}
           </span>
-        )}
+          {result.period && (
+            <span
+              style={{
+                fontSize: '0.7rem',
+                padding: '0.2rem 0.5rem',
+                backgroundColor: 'var(--accent-badge-bg)',
+                color: 'var(--accent-light)',
+                border: '1px solid var(--accent-badge-border)',
+                borderRadius: '4px',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {result.period}
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.35rem' }}>
+          <span
+            style={{
+              fontSize: '1.9rem',
+              fontWeight: 800,
+              color: 'var(--text-main)',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.1,
+            }}
+          >
+            {formattedValue}
+          </span>
+          {exactFullValue && (
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-dim)',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              }}
+            >
+              ({exactFullValue})
+            </span>
+          )}
+        </div>
       </div>
 
       <div
@@ -94,15 +132,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({ result }) => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          fontSize: '0.75rem',
+          fontSize: '0.725rem',
           color: 'var(--text-dim)',
           borderTop: '1px solid var(--border-subtle)',
-          paddingTop: '0.5rem',
-          marginTop: '0.25rem',
+          paddingTop: '0.65rem',
+          marginTop: '0.5rem',
         }}
       >
-        <span>Source: <strong>{result.sourceBoard === 'deals' ? 'Deals Board' : result.sourceBoard === 'work_orders' ? 'Work Orders' : 'Cross-Board'}</strong></span>
-        <span>{result.recordsConsidered} records considered</span>
+        <span style={{ color: 'var(--text-secondary)' }}>
+          Source: <strong style={{ color: 'var(--text-main)' }}>{boardLabel}</strong>
+        </span>
+        <span>{recordContext}</span>
       </div>
     </div>
   );

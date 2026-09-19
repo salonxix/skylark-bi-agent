@@ -14,36 +14,52 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
 }) => {
   return (
     <div
+      className="theme-surface animate-card-fade"
       style={{
-        backgroundColor: 'rgba(56, 189, 248, 0.05)',
-        border: '1px solid rgba(56, 189, 248, 0.25)',
-        borderRadius: '12px',
         padding: '1.5rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1rem',
+        gap: '1.25rem',
+        border: '1px solid var(--border-medium)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+      {/* Top Accent Line */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '2px',
+          background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))',
+        }}
+      />
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
         <div
           style={{
-            padding: '0.25rem 0.6rem',
-            backgroundColor: 'rgba(56, 189, 248, 0.15)',
-            color: 'var(--brand-blue)',
+            padding: '0.3rem 0.65rem',
+            backgroundColor: 'var(--accent-badge-bg)',
+            color: 'var(--accent-light)',
+            border: '1px solid var(--accent-badge-border)',
             borderRadius: '6px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
+            fontSize: '0.725rem',
+            fontWeight: 800,
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.06em',
+            whiteSpace: 'nowrap',
           }}
         >
           Clarification Needed
         </div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+        <div>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem', lineHeight: 1.3 }}>
             {clarification.question}
           </h3>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             {clarification.reason}
           </p>
         </div>
@@ -53,8 +69,7 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '0.75rem',
-          marginTop: '0.25rem',
+          gap: '0.85rem',
         }}
       >
         {clarification.options.map((opt, idx) => (
@@ -66,33 +81,56 @@ export const ClarificationCard: React.FC<ClarificationCardProps> = ({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
-              gap: '0.35rem',
-              padding: '0.85rem 1rem',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
+              gap: '0.4rem',
+              padding: '1rem',
+              backgroundColor: 'var(--bg-input)',
+              border: '1px solid var(--border-medium)',
               borderRadius: '8px',
               color: 'var(--text-main)',
               cursor: disabled ? 'not-allowed' : 'pointer',
               textAlign: 'left',
-              transition: 'all 0.15s ease-in-out',
+              transition: 'all 200ms ease-in-out',
+              position: 'relative',
             }}
             onMouseEnter={(e) => {
               if (!disabled) {
-                e.currentTarget.style.borderColor = 'var(--brand-blue)';
+                e.currentTarget.style.borderColor = 'var(--accent-primary)';
                 e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px var(--accent-glow-subtle)';
               }
             }}
             onMouseLeave={(e) => {
               if (!disabled) {
-                e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                e.currentTarget.style.backgroundColor = 'var(--bg-card)';
+                e.currentTarget.style.borderColor = 'var(--border-medium)';
+                e.currentTarget.style.backgroundColor = 'var(--bg-input)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }
             }}
           >
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--brand-blue)' }}>
-              {opt.label}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--accent-badge-bg)',
+                  color: 'var(--accent-light)',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                }}
+              >
+                {idx + 1}
+              </span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent-light)' }}>
+                {opt.label}
+              </span>
+            </div>
+            <span style={{ fontSize: '0.775rem', color: 'var(--text-muted)', lineHeight: 1.45, paddingLeft: '1.65rem' }}>
               {opt.description}
             </span>
           </button>

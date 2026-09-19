@@ -17,9 +17,26 @@ export class DefaultAIProvider implements AIProvider {
 
   constructor(config?: AIProviderConfig) {
     this.apiKey = config?.apiKey ?? process.env.AI_API_KEY?.trim() ?? '';
-    this.modelName = config?.modelName ?? process.env.AI_MODEL ?? 'gemini-1.5-flash';
-    this.baseUrl = config?.baseUrl ?? process.env.AI_BASE_URL ?? 'https://generativelanguage.googleapis.com/v1beta';
     this.timeoutMs = config?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+    const isSkKey = this.apiKey.startsWith('sk-');
+
+    if (config?.baseUrl || process.env.AI_BASE_URL) {
+      this.baseUrl = config?.baseUrl ?? process.env.AI_BASE_URL?.trim() ?? '';
+    } else if (isSkKey) {
+      // Default to OpenAI-compatible endpoint when an sk- key is provided
+      this.baseUrl = 'https://api.openai.com/v1';
+    } else {
+      this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+    }
+
+    if (config?.modelName || process.env.AI_MODEL) {
+      this.modelName = config?.modelName ?? process.env.AI_MODEL?.trim() ?? '';
+    } else if (isSkKey) {
+      this.modelName = 'gpt-4o-mini';
+    } else {
+      this.modelName = 'gemini-1.5-flash';
+    }
   }
 
   async generateJson<T>(prompt: string, systemPrompt?: string): Promise<T> {
@@ -50,7 +67,7 @@ export class DefaultAIProvider implements AIProvider {
       const isGemini = this.baseUrl.includes('googleapis.com');
       const url = isGemini
         ? `${this.baseUrl}/models/${this.modelName}:generateContent?key=${this.apiKey}`
-        : `${this.baseUrl}/chat/completions`;
+        : `${this.baseUrl.replace(/\/+$/, '')}/chat/completions`;
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -90,7 +107,14 @@ export class DefaultAIProvider implements AIProvider {
       });
 
       if (!res.ok) {
-        throw new Error(`AI Provider request failed with HTTP ${res.status} ${res.statusText}`);
+        let errDetails = '';
+        try {
+          const errJson = await res.json();
+          errDetails = errJson?.error?.message || JSON.stringify(errJson);
+        } catch {
+          errDetails = await res.text().catch(() => '');
+        }
+        throw new Error(`AI Provider request failed with HTTP ${res.status} ${res.statusText}${errDetails ? `: ${errDetails}` : ''}`);
       }
 
       const data = await res.json();

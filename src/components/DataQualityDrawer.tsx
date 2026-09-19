@@ -20,11 +20,11 @@ export const DataQualityDrawer: React.FC<DataQualityDrawerProps> = ({ reports, c
   return (
     <div
       style={{
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backgroundColor: 'var(--bg-card-subtle)',
         border: '1px solid var(--border-subtle)',
-        borderRadius: '8px',
+        borderRadius: '10px',
         overflow: 'hidden',
-        marginTop: '0.75rem',
+        marginTop: '0.5rem',
       }}
     >
       <button
@@ -34,33 +34,42 @@ export const DataQualityDrawer: React.FC<DataQualityDrawerProps> = ({ reports, c
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0.6rem 0.85rem',
+          padding: '0.75rem 1rem',
           backgroundColor: 'transparent',
           border: 'none',
           color: 'var(--text-muted)',
-          fontSize: '0.8125rem',
+          fontSize: '0.8rem',
           cursor: 'pointer',
           textAlign: 'left',
+          transition: 'background-color 150ms ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span>🛡️ Data Quality & Assumptions</span>
+          <span style={{ fontSize: '0.9rem' }}>🛡️</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Data Quality & Source Transparency</span>
           {totalIssues > 0 && (
             <span
               style={{
                 backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                color: 'var(--accent-amber)',
-                padding: '0.1rem 0.4rem',
+                color: 'var(--status-amber)',
+                padding: '0.15rem 0.45rem',
                 borderRadius: '4px',
-                fontSize: '0.7rem',
-                fontWeight: 600,
+                fontSize: '0.675rem',
+                fontWeight: 700,
+                border: '1px solid rgba(245, 158, 11, 0.3)',
               }}
             >
               {totalIssues} {totalIssues === 1 ? 'note' : 'notes'}
             </span>
           )}
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600 }}>
           {isOpen ? '▲ Hide Details' : '▼ View Details'}
         </span>
       </button>
@@ -68,49 +77,52 @@ export const DataQualityDrawer: React.FC<DataQualityDrawerProps> = ({ reports, c
       {isOpen && (
         <div
           style={{
-            padding: '0.85rem',
+            padding: '1rem',
             borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.75rem',
+            gap: '1rem',
             fontSize: '0.8125rem',
             color: 'var(--text-muted)',
+            backgroundColor: 'var(--bg-input)',
           }}
         >
-          {/* Caveats */}
+          {/* Query Caveats */}
           {caveats.length > 0 && (
             <div>
-              <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                Query Caveats:
+              <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '0.35rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Query Caveats & Scope:
               </strong>
-              <ul style={{ paddingLeft: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {caveats.map((c, idx) => (
-                  <li key={idx}>{c}</li>
+                  <li key={idx} style={{ color: 'var(--text-secondary)' }}>{c}</li>
                 ))}
               </ul>
             </div>
           )}
 
-          {/* Board Quality Summaries */}
+          {/* Board Diagnostics */}
           {reports && reports.length > 0 && (
             <div>
-              <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                Board Record Diagnostics:
+              <strong style={{ color: 'var(--text-main)', display: 'block', marginBottom: '0.35rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Live Board Diagnostics:
               </strong>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '0.4rem 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
                 {reports.map((r) => (
                   <div
                     key={r.boardId}
                     style={{
-                      padding: '0.4rem 0.6rem',
+                      padding: '0.6rem 0.8rem',
                       backgroundColor: 'var(--bg-card)',
                       borderRadius: '6px',
                       border: '1px solid var(--border-subtle)',
                     }}
                   >
-                    <div><strong>{r.boardName}</strong></div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                      Total: {r.totalRecords} | Clean: {r.validRecords} | Flagged: {r.recordsWithIssues}
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.2rem' }}>
+                      {r.boardName} <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>#{r.boardId}</span>
+                    </div>
+                    <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                      Total: <span style={{ color: 'var(--text-secondary)' }}>{r.totalRecords}</span> | Valid: <span style={{ color: 'var(--status-emerald)' }}>{r.validRecords}</span> | Flagged: <span style={{ color: r.recordsWithIssues > 0 ? 'var(--status-amber)' : 'var(--text-dim)' }}>{r.recordsWithIssues}</span>
                     </div>
                   </div>
                 ))}
@@ -121,12 +133,12 @@ export const DataQualityDrawer: React.FC<DataQualityDrawerProps> = ({ reports, c
           {/* Exclusions */}
           {allExclusions.length > 0 && (
             <div>
-              <strong style={{ color: 'var(--accent-amber)', display: 'block', marginBottom: '0.25rem' }}>
+              <strong style={{ color: 'var(--status-amber)', display: 'block', marginBottom: '0.35rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Metric Exclusions ({allExclusions.length}):
               </strong>
-              <ul style={{ paddingLeft: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {allExclusions.slice(0, 5).map((ex, idx) => (
-                  <li key={idx}>
+                  <li key={idx} style={{ color: 'var(--text-secondary)' }}>
                     Record #{ex.recordId}: {ex.reason} ({ex.metricImpact})
                   </li>
                 ))}
@@ -140,12 +152,12 @@ export const DataQualityDrawer: React.FC<DataQualityDrawerProps> = ({ reports, c
           {/* Inconsistencies */}
           {allInconsistencies.length > 0 && (
             <div>
-              <strong style={{ color: 'var(--accent-rose)', display: 'block', marginBottom: '0.25rem' }}>
-                Detected Data Inconsistencies ({allInconsistencies.length}):
+              <strong style={{ color: 'var(--status-rose)', display: 'block', marginBottom: '0.35rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Detected Inconsistencies ({allInconsistencies.length}):
               </strong>
-              <ul style={{ paddingLeft: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {allInconsistencies.slice(0, 5).map((inc, idx) => (
-                  <li key={idx}>
+                  <li key={idx} style={{ color: 'var(--text-secondary)' }}>
                     [{inc.recordName} #{inc.recordId}]: {inc.reason}
                   </li>
                 ))}

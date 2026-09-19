@@ -14,17 +14,40 @@ describe('ExecutiveDashboard Frontend Component', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders header, live sync indicator, and suggested starter questions', () => {
+  it('renders header, live sync indicator, theme mode switches, and executive query cards', () => {
     render(<ExecutiveDashboard />);
 
     expect(screen.getByText('Skylark BI Agent')).toBeInTheDocument();
     expect(screen.getByText('Monday Live Sync')).toBeInTheDocument();
-    expect(screen.getByText('Executive Intelligence Hub')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /FOUNDER/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /OPERATIONS/i })).toBeInTheDocument();
+    expect(screen.getByText('Ask the business anything.')).toBeInTheDocument();
     expect(screen.getByText(/How's our pipeline looking for the energy sector this quarter\?/i)).toBeInTheDocument();
     expect(screen.getByText(/Show me our open deal pipeline by sector/i)).toBeInTheDocument();
+    expect(screen.getByText(/How much has been billed versus collected\?/i)).toBeInTheDocument();
   });
 
-  it('submits a suggested question and renders the executive answer with KPI cards', async () => {
+  it('toggles theme between Founder and Operations modes', () => {
+    render(<ExecutiveDashboard />);
+
+    const founderBtn = screen.getByRole('radio', { name: /FOUNDER/i });
+    const opsBtn = screen.getByRole('radio', { name: /OPERATIONS/i });
+
+    expect(founderBtn).toHaveAttribute('aria-checked', 'true');
+    expect(opsBtn).toHaveAttribute('aria-checked', 'false');
+
+    fireEvent.click(opsBtn);
+
+    expect(founderBtn).toHaveAttribute('aria-checked', 'false');
+    expect(opsBtn).toHaveAttribute('aria-checked', 'true');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('operations');
+
+    fireEvent.click(founderBtn);
+    expect(founderBtn).toHaveAttribute('aria-checked', 'true');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('founder');
+  });
+
+  it('submits a suggested question and renders the executive briefing with Key Signals and KPI cards', async () => {
     const mockApiResponse = {
       success: true,
       answer: 'Total pipeline in Mining is ₹7,50,000 across 1 deal.',
@@ -69,11 +92,13 @@ describe('ExecutiveDashboard Frontend Component', () => {
     const suggestBtn = screen.getByText(/Show me our open deal pipeline by sector/i);
     fireEvent.click(suggestBtn);
 
-    // Verify user bubble appears
+    // Verify user query block appears
     expect(screen.getByText('Show me our open deal pipeline by sector.')).toBeInTheDocument();
+    expect(screen.getByText('Executive Query')).toBeInTheDocument();
 
     // Verify answer appears
     await waitFor(() => {
+      expect(screen.getByText('Executive Intelligence Briefing')).toBeInTheDocument();
       expect(screen.getByText(/Total pipeline in Mining is ₹7,50,000 across 1 deal/i)).toBeInTheDocument();
       expect(screen.getByText('₹7.50 L')).toBeInTheDocument();
       expect(screen.getByText(/1 records considered/i)).toBeInTheDocument();
@@ -133,7 +158,7 @@ describe('ExecutiveDashboard Frontend Component', () => {
 
     render(<ExecutiveDashboard />);
 
-    const input = screen.getByPlaceholderText(/Ask anything/i);
+    const input = screen.getByPlaceholderText(/Ask about pipeline, revenue/i);
     const submitBtn = screen.getByRole('button', { name: /Ask Agent/i });
 
     fireEvent.change(input, { target: { value: 'What is our revenue?' } });
@@ -168,7 +193,7 @@ describe('ExecutiveDashboard Frontend Component', () => {
 
     render(<ExecutiveDashboard />);
 
-    const input = screen.getByPlaceholderText(/Ask anything/i);
+    const input = screen.getByPlaceholderText(/Ask about pipeline, revenue/i);
     const submitBtn = screen.getByRole('button', { name: /Ask Agent/i });
 
     fireEvent.change(input, { target: { value: 'Show pipeline' } });
@@ -223,14 +248,14 @@ describe('ExecutiveDashboard Frontend Component', () => {
 
     render(<ExecutiveDashboard />);
 
-    const input = screen.getByPlaceholderText(/Ask anything/i);
+    const input = screen.getByPlaceholderText(/Ask about pipeline, revenue/i);
     const submitBtn = screen.getByRole('button', { name: /Ask Agent/i });
 
     fireEvent.change(input, { target: { value: 'Show pipeline' } });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Data Quality & Assumptions/i)).toBeInTheDocument();
+      expect(screen.getByText(/Data Quality & Source Transparency/i)).toBeInTheDocument();
     });
 
     // Click disclosure button to expand
