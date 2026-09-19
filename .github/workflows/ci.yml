@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          MONDAY_API_TOKEN: dummy_token_for_ci
+          MONDAY_DEALS_BOARD_ID: '5031418651'
+          MONDAY_WORK_ORDERS_BOARD_ID: '5031418671'
+          AI_API_KEY: dummy_ai_key_for_ci
