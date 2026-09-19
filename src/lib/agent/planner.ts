@@ -14,11 +14,19 @@ export function isAmbiguousRevenueQuery(message: string): boolean {
 }
 
 /**
+ * Checks if a user prompt is asking for a leadership/executive briefing or update
+ */
+export function isLeadershipUpdateQuery(message: string): boolean {
+  const normalized = message.toLowerCase().trim();
+  return /\b(leadership update|leadership briefing|executive update|executive summary|ceo update|management update|management summary|business overview)\b/i.test(normalized);
+}
+
+/**
  * Checks if a user prompt is a greeting or general conversational help query
  */
 export function isGreetingOrHelp(message: string): boolean {
-  const normalized = message.toLowerCase().trim();
-  return /^(hey|hi|hello|help|howdy|greetings|what can you do|who are you|good morning|good evening)\b/i.test(normalized);
+  const normalized = message.toLowerCase().trim().replace(/[^\w\s]/g, '');
+  return /^(hey|hi|hello|help|howdy|greetings|good morning|good evening|whats up|wassup|sup|yo|gm)\b/i.test(normalized);
 }
 
 /**
@@ -103,18 +111,30 @@ export async function planQuery(
     throw new Error('Message cannot be empty.');
   }
 
-  // 1. Deterministic guard for greetings / general help
+  // 1. Deterministic guard for greetings / help short-circuits to greeting card
   if (isGreetingOrHelp(trimmed)) {
     return buildGreetingResponse();
   }
 
-  // 2. Deterministic guard for ambiguous revenue query
+  // 2. Deterministic guard for leadership updates
+  if (isLeadershipUpdateQuery(trimmed)) {
+    return {
+      type: 'query',
+      querySpec: {
+        dataset: 'both',
+        metric: 'leadership_update',
+        dateRange: { period: 'all' },
+      },
+    };
+  }
+
+  // 3. Deterministic guard for ambiguous revenue query
   if (isAmbiguousRevenueQuery(trimmed)) {
     return buildRevenueClarification();
   }
 
-  // 3. Call AI Planner to extract structured intent
-  const prompt = `Convert the following user question into a strict JSON QuerySpec or Clarification:\n\n"${trimmed}"`;
+  // 3. Call AI Planner to extract structured intent or natural conversational response
+  const prompt = `Convert the following user question into a strict JSON QuerySpec or Clarification or Conversational response:\n\n"${trimmed}"`;
 
   try {
     const rawOutput = await aiProvider.generateJson<unknown>(prompt, PLANNER_SYSTEM_PROMPT);
@@ -233,6 +253,11 @@ export function planDeterministicFallback(message: string): PlannerResult | null
         sector,
       },
     };
+  }
+
+  // Fallback for greetings/help if AI is offline
+  if (isGreetingOrHelp(message)) {
+    return buildGreetingResponse();
   }
 
   return null;

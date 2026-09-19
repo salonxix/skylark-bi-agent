@@ -131,4 +131,28 @@ describe('BI Agent Executor', () => {
     expect(res.results.some((r) => r.metric === 'billed_value_excl_gst')).toBe(true);
     expect(res.dataQuality).toHaveLength(2); // Both Deals and Work Orders profiled
   });
+
+  it('executes leadership update metric returning holistic executive metrics', async () => {
+    const res = await executeQuerySpec(
+      {
+        dataset: 'both',
+        metric: 'leadership_update',
+        dateRange: { period: 'all' },
+      },
+      {
+        preloadedDeals: mockDeals,
+        preloadedWorkOrders: mockWorkOrders,
+      }
+    );
+
+    expect(res.results.length).toBeGreaterThanOrEqual(6);
+    expect(res.results.some((r) => r.metric === 'total_deal_value')).toBe(true);
+    expect(res.results.some((r) => r.metric === 'deal_count')).toBe(true);
+    expect(res.results.some((r) => r.metric === 'work_order_amount_excl_gst')).toBe(true);
+    expect(res.results.some((r) => r.metric === 'billed_value_excl_gst')).toBe(true);
+    expect(res.results.some((r) => r.metric === 'collected_amount_incl_gst')).toBe(true);
+    expect(res.results.some((r) => r.metric === 'amount_receivable')).toBe(true);
+    expect(res.results.some((r) => r.metric === 'deal_value_by_sector')).toBe(true);
+    expect(res.dataQuality).toHaveLength(2);
+  });
 });

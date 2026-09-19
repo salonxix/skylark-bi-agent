@@ -33,6 +33,18 @@ describe('BI Agent Planner', () => {
       }
       expect(mockProvider.generateJson).not.toHaveBeenCalled();
     });
+
+    it('returns structured greeting card for greetings deterministically without calling AI', async () => {
+      const mockProvider = createMockAIProvider({});
+      const result = await planQuery('hi', mockProvider);
+
+      expect(result.type).toBe('clarification');
+      if (result.type === 'clarification') {
+        expect(result.clarification.question).toContain('Welcome to Skylark BI Agent');
+        expect(result.clarification.options.length).toBeGreaterThanOrEqual(4);
+      }
+      expect(mockProvider.generateJson).not.toHaveBeenCalled();
+    });
   });
 
   describe('AI Planning & Zod Validation', () => {
@@ -59,6 +71,21 @@ describe('BI Agent Planner', () => {
         expect(result.querySpec.metric).toBe('deal_value_by_sector');
         expect(result.querySpec.sector).toBe('Mining');
         expect(result.querySpec.dateRange?.period).toBe('current_quarter');
+      }
+    });
+
+    it('successfully validates conversational responses from AI', async () => {
+      const mockAiOutput = {
+        type: 'conversational',
+        response: 'Hello! I can help you analyze live Monday.com deals and work orders data.',
+      };
+
+      const mockProvider = createMockAIProvider(mockAiOutput);
+      const result = await planQuery('Who are you and what can you do?', mockProvider);
+
+      expect(result.type).toBe('conversational');
+      if (result.type === 'conversational') {
+        expect(result.response).toContain('Monday.com');
       }
     });
 
@@ -102,6 +129,16 @@ describe('BI Agent Planner', () => {
         expect(plan.querySpec.dataset).toBe('work_orders');
         expect(plan.querySpec.metric).toBe('billed_value_excl_gst');
         expect(plan.querySpec.sector).toBe('Mining');
+      }
+    });
+
+    it('parses leadership update queries into leadership_update metric', async () => {
+      const mockProvider = createMockAIProvider({});
+      const result = await planQuery('Give me a leadership update', mockProvider);
+      expect(result.type).toBe('query');
+      if (result.type === 'query') {
+        expect(result.querySpec.dataset).toBe('both');
+        expect(result.querySpec.metric).toBe('leadership_update');
       }
     });
   });

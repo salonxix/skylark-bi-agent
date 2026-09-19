@@ -35,7 +35,7 @@ export class DefaultAIProvider implements AIProvider {
     } else if (isSkKey) {
       this.modelName = 'gpt-4o-mini';
     } else {
-      this.modelName = 'gemini-1.5-flash';
+      this.modelName = 'gemini-3.6-flash';
     }
   }
 
@@ -99,12 +99,55 @@ export class DefaultAIProvider implements AIProvider {
         };
       }
 
-      const res = await fetch(url, {
+      let res = await fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
         signal: controller.signal,
       });
+
+      // If Gemini model returns 404 (not found), 503 (high demand), or 429 (rate limit), try active alternative model names
+      if (!res.ok && isGemini && (res.status === 404 || res.status === 503 || res.status === 429)) {
+        const fallbacks = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-flash-latest'];
+        for (const altModel of fallbacks) {
+          if (altModel === this.modelName) continue;
+          try {
+            const altUrl = `${this.baseUrl}/models/${altModel}:generateContent?key=${this.apiKey}`;
+            const altRes = await fetch(altUrl, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(body),
+              signal: controller.signal,
+            });
+            if (altRes?.ok) {
+              res = altRes;
+              this.modelName = altModel;
+              break;
+            }
+          } catch {
+            // Ignore individual fallback fetch failure and continue
+          }
+        }
+
+        // If still not ok and status is 503 or 429, retry once after 500ms backoff
+        if (!res.ok && (res.status === 503 || res.status === 429)) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          try {
+            const retryUrl = `${this.baseUrl}/models/${this.modelName}:generateContent?key=${this.apiKey}`;
+            const retryRes = await fetch(retryUrl, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(body),
+              signal: controller.signal,
+            });
+            if (retryRes?.ok) {
+              res = retryRes;
+            }
+          } catch {
+            // Continue to error reporting
+          }
+        }
+      }
 
       if (!res.ok) {
         let errDetails = '';

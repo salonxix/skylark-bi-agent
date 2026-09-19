@@ -37,9 +37,10 @@ export const SupportedMetricSchema = z.enum([
   'work_orders_by_execution_status',
   'work_orders_by_billing_status',
 
-  // Cross board overview
+  // Cross board overview & leadership metrics
   'cross_board_overview',
   'cross_board_sector_summary',
+  'leadership_update',
 ]);
 
 export const DateRangeSchema = z.object({
@@ -97,5 +98,9 @@ export const PlannerOutputSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('clarification'),
     clarification: ClarificationRequestSchema,
+  }),
+  z.object({
+    type: z.literal('conversational'),
+    response: z.string(),
   }),
 ]);

@@ -141,10 +141,16 @@ function getColumn(
 }
 
 /**
- * Normalizes a single Deal item
+ * Normalizes a single Deal item.
+ *
+ * NOTE ON COLUMN MAPPINGS (Architectural Trade-off):
+ * Column IDs below (e.g., 'numeric_mm7b65d9', 'color_mm7bdx2e') are specific to Monday.com
+ * Deals Board ID 5031418651 ("Deal funnel Data"). Hardcoded IDs were chosen for deterministic,
+ * type-safe extraction within fixed scope. If board schema or column IDs are rebuilt, update
+ * the mapping constants here as documented in `src/lib/bi/ASSUMPTIONS.md`.
  */
 export function normalizeDeal(raw: RawMondayItem): NormalizedDeal {
-  // Deals Board Column IDs (Board: 5031418651)
+  // Deals Board Column IDs (Board: 5031418651 - see ASSUMPTIONS.md Section 1.A)
   const ownerCol = getColumn(raw, 'color_mm7bdx2e');
   const clientCol = getColumn(raw, 'dropdown_mm7b4q06');
   const statusCol = getColumn(raw, 'color_mm7bp3k2');
@@ -186,10 +192,16 @@ export function normalizeDeals(rawItems: RawMondayItem[]): NormalizedDeal[] {
 }
 
 /**
- * Normalizes a single Work Order item
+ * Normalizes a single Work Order item.
+ *
+ * NOTE ON COLUMN MAPPINGS (Architectural Trade-off):
+ * Column IDs below (e.g., 'numeric_mm7bnav4', 'numeric_mm7btzx2') are specific to Monday.com
+ * Work Orders Board ID 5031418671 ("Work_Order_Tracker Data"). Hardcoded IDs guarantee deterministic
+ * financial mapping between GST-exclusive and GST-inclusive source fields. If the board is rebuilt,
+ * update the column IDs here as documented in `src/lib/bi/ASSUMPTIONS.md`.
  */
 export function normalizeWorkOrder(raw: RawMondayItem): NormalizedWorkOrder {
-  // Work Order Column IDs (Board: 5031418671)
+  // Work Order Column IDs (Board: 5031418671 - see ASSUMPTIONS.md Section 1.B)
   const companyCol = getColumn(raw, 'dropdown_mm7bj008');
   const dealCodeCol = getColumn(raw, 'dropdown_mm7bw1hf');
   const projectTypeCol = getColumn(raw, 'color_mm7bfa0f');

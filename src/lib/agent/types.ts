@@ -7,7 +7,8 @@ export type ClarificationRequest = z.infer<typeof ClarificationRequestSchema>;
 
 export type PlannerResult =
   | { type: 'query'; querySpec: QuerySpec }
-  | { type: 'clarification'; clarification: ClarificationRequest };
+  | { type: 'clarification'; clarification: ClarificationRequest }
+  | { type: 'conversational'; response: string };
 
 export interface AgentSuccessResponse {
   success: true;

@@ -30,7 +30,31 @@ export async function POST(req: Request) {
     const aiProvider = new DefaultAIProvider();
 
     // Step 1: Interpret user intent via Planner
-    const planResult = await planQuery(message, aiProvider);
+    let planResult;
+    try {
+      planResult = await planQuery(message, aiProvider);
+    } catch (plannerErr) {
+      console.error('[AI Planner Error]:', plannerErr);
+      const errMsg = plannerErr instanceof Error ? plannerErr.message : String(plannerErr);
+      if (errMsg.includes('Missing AI_API_KEY')) {
+        return NextResponse.json<AgentResponse>(
+          {
+            success: false,
+            error: 'AI API key is not configured. Please check your settings.',
+            code: 'CONFIG_ERROR',
+          },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json<AgentResponse>(
+        {
+          success: false,
+          error: "I'm having trouble reaching the AI service right now — please try again.",
+          code: 'AGENT_ERROR',
+        },
+        { status: 500 }
+      );
+    }
 
     // If clarification is required, return immediately
     if (planResult.type === 'clarification') {
@@ -40,6 +64,20 @@ export async function POST(req: Request) {
           clarification: planResult.clarification,
           results: [],
           dataQuality: [],
+        },
+        { status: 200 }
+      );
+    }
+
+    // If response is conversational / conceptual / guidance, return the natural response directly
+    if (planResult.type === 'conversational') {
+      return NextResponse.json<AgentResponse>(
+        {
+          success: true,
+          answer: planResult.response,
+          results: [],
+          dataQuality: [],
+          clarification: null,
         },
         { status: 200 }
       );
@@ -77,7 +115,8 @@ Explain these results directly and concisely for the user.
     let answer: string;
     try {
       answer = await aiProvider.generateText(narratorPrompt, NARRATOR_SYSTEM_PROMPT);
-    } catch {
+    } catch (narratorErr) {
+      console.error('[AI Narrator Error]:', narratorErr);
       // Fallback deterministic explanation if AI narrator is unavailable
       const res = execution.results[0];
       if (res) {
@@ -110,23 +149,37 @@ Explain these results directly and concisely for the user.
       { status: 200 }
     );
   } catch (error: unknown) {
+    console.error('[Agent Route Top-Level Error]:', error);
     const rawMessage = error instanceof Error ? error.message : 'An unexpected error occurred in BI Agent';
 
     let statusCode = 500;
     let errorCode = 'AGENT_ERROR';
+    let userFacingMessage = "I'm having trouble reaching the AI service right now — please try again.";
 
-    if (rawMessage.includes('Missing MONDAY_API_TOKEN') || rawMessage.includes('Missing AI_API_KEY')) {
+    if (rawMessage.includes('Missing MONDAY_API_TOKEN')) {
       statusCode = 503;
       errorCode = 'CONFIG_ERROR';
+      userFacingMessage = 'Monday.com API token is not configured. Please check your settings.';
+    } else if (rawMessage.includes('Missing AI_API_KEY')) {
+      statusCode = 503;
+      errorCode = 'CONFIG_ERROR';
+      userFacingMessage = 'AI API key is not configured. Please check your settings.';
     } else if (rawMessage.includes('Monday API') || rawMessage.includes('GraphQL')) {
       statusCode = 502;
       errorCode = 'MONDAY_API_ERROR';
+      userFacingMessage = 'Unable to fetch data from Monday.com right now. Please try again.';
+    } else if (rawMessage.includes('AI Provider') || rawMessage.includes('HTTP 404') || rawMessage.includes('models/')) {
+      statusCode = 500;
+      errorCode = 'AGENT_ERROR';
+      userFacingMessage = "I'm having trouble reaching the AI service right now — please try again.";
+    } else {
+      userFacingMessage = rawMessage;
     }
 
     return NextResponse.json<AgentResponse>(
       {
         success: false,
-        error: rawMessage,
+        error: userFacingMessage,
         code: errorCode,
       },
       { status: statusCode }

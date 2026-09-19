@@ -56,14 +56,18 @@ export async function executeQuerySpec(
     return client;
   };
 
-  // Fetch Deals if required and not preloaded
+  // Fetch Deals if required and not preloaded.
+  // NOTE: Defaults to board 5031418651 if MONDAY_DEALS_BOARD_ID is not configured in env.
+  // See src/lib/bi/ASSUMPTIONS.md for schema mappings.
   if ((spec.dataset === 'deals' || spec.dataset === 'both') && !ctx?.preloadedDeals) {
     const dealsBoardId = process.env.MONDAY_DEALS_BOARD_ID?.trim() || '5031418651';
     const snapshot = await getClient().fetchBoardSnapshot(dealsBoardId);
     normalizedDeals = normalizeDeals(snapshot.items);
   }
 
-  // Fetch Work Orders if required and not preloaded
+  // Fetch Work Orders if required and not preloaded.
+  // NOTE: Defaults to board 5031418671 if MONDAY_WORK_ORDERS_BOARD_ID is not configured in env.
+  // See src/lib/bi/ASSUMPTIONS.md for schema mappings.
   if ((spec.dataset === 'work_orders' || spec.dataset === 'both') && !ctx?.preloadedWorkOrders) {
     const woBoardId = process.env.MONDAY_WORK_ORDERS_BOARD_ID?.trim() || '5031418671';
     const snapshot = await getClient().fetchBoardSnapshot(woBoardId);
@@ -193,6 +197,17 @@ export async function executeQuerySpec(
     case 'cross_board_sector_summary':
       results.push(calculateDealValueBySector(normalizedDeals, filterOptions));
       results.push(calculateWorkOrdersBySector(normalizedWorkOrders, 'billedValueInclGst', filterOptions));
+      break;
+
+    case 'leadership_update':
+      // Executive synthesis: pipeline total, deal count, contract total, billed value, collected cash, amount receivable
+      results.push(calculateTotalDealValue(normalizedDeals, filterOptions));
+      results.push(calculateDealCount(normalizedDeals, filterOptions));
+      results.push(calculateTotalWorkOrderAmountExclGst(normalizedWorkOrders, filterOptions));
+      results.push(calculateTotalBilledValueExclGst(normalizedWorkOrders, filterOptions));
+      results.push(calculateTotalCollectedAmountInclGst(normalizedWorkOrders, filterOptions));
+      results.push(calculateTotalAmountReceivable(normalizedWorkOrders, filterOptions));
+      results.push(calculateDealValueBySector(normalizedDeals, filterOptions));
       break;
 
     default:
